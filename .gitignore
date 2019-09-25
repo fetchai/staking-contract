@@ -1,0 +1,19 @@
+# python
+dist/
+*.egg-info
+
+# Environments
+venv/
+
+# mac
+.DS_Store
+
+# Pycharm
+.idea
+
+# javascript
+node_modules
+package-lock.json
+
+# truffle
+build/

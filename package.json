@@ -1,0 +1,6 @@
+{
+  "dependencies": {
+    "openzeppelin-test-helpers": "^0.4.0",
+    "chai": "^4.2.0"
+  }
+}
