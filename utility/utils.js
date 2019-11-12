@@ -65,8 +65,8 @@ exports.addNBids = async function(instance, auctionSpec, accounts,  options={}){
         let receipt = await instance.bid(amounts[i], {from: accounts[i]})
         receipts.push(receipt)
         let amount = exports.filterEventValue(receipt, 'Bid', 'amount')
-        let bidAtPrice = exports.filterEventValue(receipt, 'Bid', 'currentPrice')
-        enteredBids.push({amount: amount, bidAtPrice: bidAtPrice})
+        let priceAtBid = exports.filterEventValue(receipt, 'Bid', 'currentPrice')
+        enteredBids.push({amount: amount, priceAtBid: priceAtBid})
     }
     return [enteredBids, receipts]
 };
@@ -116,16 +116,16 @@ exports.getTokenBalances = async function(token, instance, addresses, poolAddres
     return [tokenBalance.toString(), accountBalances, poolBalances]
 }
 
-function allocateSlots(amount, bidAtPrice, slotsRemaining, finalPrice, maxNextPrice){
+function allocateSlots(amount, priceAtBid, slotsRemaining, finalPrice, maxNextPrice){
     let slotsWon = 0
 
-    if (finalPrice.lte(bidAtPrice)){
+    if (finalPrice.lte(priceAtBid)){
         slotsWon = Math.min( amount.div(finalPrice).toNumber(), slotsRemaining)
     }
 
     let nextPrice = amount.div( new BN( (slotsWon + 1).toString() ) )
-    if (bidAtPrice.lt(nextPrice)){
-        nextPrice = bidAtPrice
+    if (priceAtBid.lt(nextPrice)){
+        nextPrice = priceAtBid
     }
     if (nextPrice.gt(maxNextPrice)){
         maxNextPrice = nextPrice
@@ -151,7 +151,7 @@ exports.calcTrueFinalPrice = function(auctionSpec, enteredBids, lowestPrice){
 
         for (i=0; i< enteredBids.length; i++){
             let bid = enteredBids[i]
-            let out = allocateSlots(bid.amount, bid.bidAtPrice, slotsRemaining, finalPrice, maxNextPrice)
+            let out = allocateSlots(bid.amount, bid.priceAtBid, slotsRemaining, finalPrice, maxNextPrice)
             maxNextPrice = out[0]; slotsRemaining = out[1]
         }
 
@@ -180,10 +180,20 @@ exports.getEnteredBidsFromEvents = async function(instance, fromBlock=0, AID=und
     let contract = new web3.eth.Contract(instance.abi, instance.address)
     let bidEvents = await contract.getPastEvents("Bid", {fromBlock: fromBlock, toBlock: "latest"})
     let enteredBids = bidEvents.map(event => ({amount: new BN(event.returnValues.amount),
-                                               bidAtPrice: new BN(event.returnValues.currentPrice),
+                                               priceAtBid: new BN(event.returnValues.currentPrice),
                                                AID: event.returnValues.AID}))
     if (AID){
         enteredBids = enteredBids.filter(bid => bid.AID == AID.toString())
     }
     return enteredBids
+};
+
+exports.calc_rewardPerTok = function(poolSpec){
+        return poolSpec._totalReward.mul(AuctionConstants._reward_per_tok_denominator).div(poolSpec._maxStake)
+};
+
+exports.registerWalletPool = async function(token, instance, poolSpec, AID) {
+    // requires the rewards to be approved
+    expect(await token.allowance.call(poolSpec._owner, instance.address)).to.be.bignumber.gte(poolSpec._totalReward)
+    await instance.registerPool(AID, poolSpec._totalReward, poolSpec.rewardPerTok, {from: poolSpec._owner})
 };

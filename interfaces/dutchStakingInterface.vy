@@ -8,9 +8,12 @@ Bid: event({AID: uint256, _from: address, currentPrice: uint256(tok), amount: ui
 NewAuction: event({AID: uint256, start: uint256, end: uint256, lockupEnd: uint256, startStake: uint256(tok), reserveStake: uint256(tok), declinePerBlock: uint256(tok), slotsOnSale: uint256, rewardPerSlot: uint256(tok)})
 PoolRegistration: event({AID: uint256, _address: address, maxStake: uint256(tok), rewardPerTok: uint256(tok)})
 NewPledge: event({AID: uint256, _from: address, operator: address, amount: uint256(tok)})
+IncreasedPledge: event({AID: uint256, _from: address, operator: address, topup: uint256(tok)})
 AuctionFinalised: event({AID: uint256, finalPrice: uint256(tok), slotsSold: uint256(tok)})
 LockupEnded: event({AID: uint256})
 AuctionAborted: event({AID: uint256, rewardsPaid: bool})
+SelfStakeWithdrawal: event({_from: address, amount: uint256(tok)})
+PledgeWithdrawal: event({_from: address, amount: uint256(tok)})
 
 # Functions
 
@@ -51,6 +54,10 @@ def pledgeStake(AID: uint256, pool: address, amount: uint256(tok)):
     pass
 
 @public
+def increasePledge(pool: address, topup: uint256(tok)):
+    pass
+
+@public
 def withdrawSelfStake() -> uint256(tok):
     pass
 
@@ -60,6 +67,14 @@ def withdrawPledgedStake() -> uint256(tok):
 
 @public
 def deleteContract():
+    pass
+
+@public
+def setVirtTokenHolder(_address: address, _isVirtTokenHolder: bool, limit: uint256(tok), preserveRewards: bool):
+    pass
+
+@public
+def setVirtTokenLimit(_address: address, _virtTokenLimit: uint256(tok)):
     pass
 
 @constant
@@ -79,7 +94,7 @@ def getFinalStakerSlots(staker: address) -> uint256:
 
 @constant
 @public
-def getFinalStakers() -> address[300]:
+def getFinalStakers() -> address[200]:
     pass
 
 @constant
@@ -119,17 +134,22 @@ def earliestDelete() -> uint256(sec, positional):
 
 @constant
 @public
-def pledgedDeposits(arg0: address) -> uint256(tok):
+def poolDeposits(arg0: address) -> uint256(tok):
     pass
 
 @constant
 @public
-def poolStakerDeposits__amount(arg0: address) -> uint256(tok):
+def pledges__amount(arg0: address) -> uint256(tok):
     pass
 
 @constant
 @public
-def poolStakerDeposits__AID(arg0: address) -> uint256:
+def pledges__AID(arg0: address) -> uint256:
+    pass
+
+@constant
+@public
+def pledges__pool(arg0: address) -> address:
     pass
 
 @constant
@@ -139,7 +159,7 @@ def selfStakerDeposits(arg0: address) -> uint256(tok):
 
 @constant
 @public
-def bidAtPrice(arg0: address) -> uint256(tok):
+def priceAtBid(arg0: address) -> uint256(tok):
     pass
 
 @constant
@@ -209,6 +229,11 @@ def auction__slotsOnSale() -> uint256:
 
 @constant
 @public
+def auction__rewardPerSlot() -> uint256(tok):
+    pass
+
+@constant
+@public
 def auction__uniqueStakers() -> uint256:
     pass
 
@@ -219,5 +244,15 @@ def totalAuctionRewards() -> uint256(tok):
 
 @constant
 @public
-def rewardPerSlot() -> uint256(tok):
+def virtTokenHolders__isHolder(arg0: address) -> bool:
+    pass
+
+@constant
+@public
+def virtTokenHolders__limit(arg0: address) -> uint256(tok):
+    pass
+
+@constant
+@public
+def virtTokenHolders__rewards(arg0: address) -> uint256(tok):
     pass

@@ -5,7 +5,7 @@ exports.AuctionConstants = {
   _reserve_price_duration: 25,
   _delete_period: 60 * (3600 * 24),
   _reward_per_tok_denominator: new BN('100000'),
-  _max_slots: 300,
+  _max_slots: 200,
 }
 
 exports.FET_ERC20 = {

@@ -64,7 +64,7 @@ def registerPool(AID: uint256,
 
     clear(self.registeredPools[AID - 1])
 
-# @dev Enter a bid at the current price, given that pledgedDeposits >= price
+# @dev Enter a bid at the current price, given that poolDeposits >= price
 @public
 def bidPledgedStake():
     assert msg.sender == self.owner, "Owner only"
@@ -72,14 +72,14 @@ def bidPledgedStake():
     self.auctionContract.bid(amount)
 
 # @notice Make a bid at the current price, adding any amount exceeding
-#   pledgedDeposits as selfStake. Requires that this contract has an ERC20
+#   poolDeposits as selfStake. Requires that this contract has an ERC20
 #   balance of that amount
 @public
 def bidPledgedAndSelfStake(amount: uint256(tok)):
     assert msg.sender == self.owner, "Owner only"
 
     currentPrice: uint256(tok) = self.auctionContract.getCurrentPrice()
-    existingPoolStake: uint256(tok) = self.auctionContract.pledgedDeposits(self) + self.auctionContract.selfStakerDeposits(self)
+    existingPoolStake: uint256(tok) = self.auctionContract.poolDeposits(self) + self.auctionContract.selfStakerDeposits(self)
     toApprove: uint256(tok)
 
     if (amount == 0) and (currentPrice > existingPoolStake):

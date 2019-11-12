@@ -4,7 +4,8 @@ const { expect } = require('chai');
 const dutchStaking = artifacts.require("dutchStaking");
 
 const { deployToken, initialiseAuction, approveAll, addNBids, advanceToBlock, advanceToPrice, advanceAndEndLockup,
-    filterEventValue, getTokenBalances, advanceAndFinaliseAuction, calcTrueFinalPrice, getEnteredBidsFromEvents } = require('../utility/utils');
+        filterEventValue, getTokenBalances, advanceAndFinaliseAuction, calcTrueFinalPrice, getEnteredBidsFromEvents,
+        registerWalletPool, calc_rewardPerTok } = require('../utility/utils');
 const { AuctionConstants, FET_ERC20 } = require("../utility/constants.js")
 
 
@@ -89,7 +90,7 @@ contract("dutchStaking - selfStaking", async accounts => {
         });
         it("should initialise the auction, increase the currentAID, add auction rewards and return isBiddingPhase = true", async () => {
             let currentAIDInit = await instance.currentAID.call()
-            expect(currentAIDInit).to.be.zero
+            expect(currentAIDInit).to.be.bignumber.equal('0')
 
             await token.approve(instance.address, auctionSpec._totalStakingRewards)
             auctionSpec._auctionStart = await web3.eth.getBlockNumber() + 1
@@ -127,7 +128,7 @@ contract("dutchStaking - selfStaking", async accounts => {
             await expectEvent.inLogs(receipt.logs, "NewAuction", {rewardPerSlot: new BN(auctionSpecCopy._rewardPerSlot)})
 
             let totalAuctionRewards = await instance.totalAuctionRewards.call()
-            expect(totalAuctionRewards).to.be.zero
+            expect(totalAuctionRewards).to.be.bignumber.equal('0')
         });
     });
 
@@ -138,7 +139,7 @@ contract("dutchStaking - selfStaking", async accounts => {
 
         it("should return 0 without an auction", async () => {
             let currentPrice = await instance.getCurrentPrice.call()
-            expect(currentPrice).to.be.zero
+            expect(currentPrice).to.be.bignumber.equal('0')
         });
         it("should return the startStake before auction start", async () => {
             await initialiseAuction(auctionSpec, token, instance, {start: await web3.eth.getBlockNumber() + 10})
@@ -178,11 +179,11 @@ contract("dutchStaking - selfStaking", async accounts => {
         });
 
         it("should return 0 without deposit if no auction is running", async () => {
-            expect(await instance.calculateSelfStakeNeeded.call(accounts[0])).to.be.zero
+            expect(await instance.calculateSelfStakeNeeded.call(accounts[0])).to.be.bignumber.equal('0')
         });
         it("should return 0 for non-bidder if auction is running", async () => {
             await initialiseAuction(auctionSpec, token, instance)
-            expect(await instance.calculateSelfStakeNeeded.call(accounts[0])).to.be.zero
+            expect(await instance.calculateSelfStakeNeeded.call(accounts[0])).to.be.bignumber.equal('0')
         });
         it("should throw for bidder if auction is running", async () => {
             await token.approve(instance.address, auctionSpec._startStake, {from: accounts[0]})
@@ -472,7 +473,7 @@ contract("dutchStaking - selfStaking", async accounts => {
 
                 let expectedTotalSlotsSold = '4'
                 let expectedSlotsWon = ['2', '1', '1', '0']
-                let trueFinalPrice = enteredBids[2].bidAtPrice
+                let trueFinalPrice = enteredBids[2].priceAtBid
                 await duplicateTests(auctionSpecCopy, bidders, enteredBids, trueFinalPrice, expectedTotalSlotsSold, expectedSlotsWon)
             });
         });
@@ -486,7 +487,7 @@ contract("dutchStaking - selfStaking", async accounts => {
             });
 
             it("should not clear above startStake, even if it could", async () => {
-                // bidAtPrice value should still be startStake, thereby lowest clearing price should end up being startStake
+                // priceAtBid value should still be startStake, thereby lowest clearing price should end up being startStake
                 let nBids = 2
                 let bids = new Array(nBids).fill( auctionSpec._startStake.mul( new BN('4')) )
                 let bidders = accounts.slice(1, 1 + bids.length)
@@ -584,7 +585,11 @@ contract("dutchStaking - selfStaking", async accounts => {
                 await advanceAndFinaliseAuction(auctionSpec, instance, {finalPrice: trueFinalPrice})
                 await advanceAndEndLockup(auctionSpec, instance)
                 await instance.retrieveUndistributedAuctionRewards()
-                expect(await token.balanceOf(instance.address)).to.be.zero
+
+                for (i=0; i<bidders.length; i++){
+                    await instance.withdrawSelfStake({from: bidders[i]})
+                }
+                expect(await token.balanceOf(instance.address)).to.be.bignumber.equal('0')
             });
             it("should not run into the vyper bug of external calls in if-clauses that evaluate false", async () => {
                 // if the entered bids are identical, no topup was needed and the
@@ -667,7 +672,7 @@ contract("dutchStaking - selfStaking", async accounts => {
             let balancePost = await token.balanceOf(auctionSpec._owner)
             expect(balancePost.sub(balancePre)).to.be.bignumber.equal(expUnclaimed)
 
-            expect(await instance.totalAuctionRewards.call()).to.be.zero
+            expect(await instance.totalAuctionRewards.call()).to.be.bignumber.equal('0')
         });
     });
 
@@ -720,7 +725,7 @@ contract("dutchStaking - selfStaking", async accounts => {
             let existingDeposit = await instance.selfStakerDeposits.call(stakerBoth)
             let existingDepositStakerAID2 = await instance.selfStakerDeposits.call(stakerAID2)
             expect(existingDeposit).to.be.bignumber.gt( new BN('0') )
-            expect(existingDepositStakerAID2).to.be.zero
+            expect(existingDepositStakerAID2).to.be.bignumber.equal('0')
 
             expect(await instance.getCurrentPrice.call()).to.be.bignumber.lte(existingDeposit)
 
@@ -817,7 +822,7 @@ contract("dutchStaking - selfStaking", async accounts => {
         });
 
         it("should have nothing to abort if run without an auction", async () => {
-            await expectRevert(instance.abortAuction(false, {from: auctionSpec._owner}), "Nothing to abort")
+            await expectRevert(instance.abortAuction(false, {from: auctionSpec._owner}), "No lockup to end")
         });
         it("should prohibit anyone except the owner to call it", async () => {
             await expectRevert(instance.abortAuction(false, {from: accounts[5]}), "Owner only")
@@ -828,10 +833,10 @@ contract("dutchStaking - selfStaking", async accounts => {
             await expectEvent.inLogs(receipt.logs, "AuctionAborted", {AID: new BN(auctionSpec._AID),
                                                                       rewardsPaid: false})
 
-            expect(await instance.auction__start.call()).to.be.zero
-            expect(await instance.auction__lockupEnd.call()).to.be.zero
-            expect(await instance.auction__slotsSold.call()).to.be.zero
-            expect(await instance.rewardPerSlot.call()).to.be.zero
+            expect(await instance.auction__start.call()).to.be.bignumber.equal('0')
+            expect(await instance.auction__lockupEnd.call()).to.be.bignumber.equal('0')
+            expect(await instance.auction__slotsSold.call()).to.be.bignumber.equal('0')
+            expect(await instance.auction__rewardPerSlot.call()).to.be.bignumber.equal('0')
 
             let auctionSpecCopy = Object.assign({}, auctionSpec);
             auctionSpecCopy._AID = auctionSpec._AID + 1
@@ -938,6 +943,163 @@ contract("dutchStaking - selfStaking", async accounts => {
             let balanceOwnerPost = await token.balanceOf(auctionSpec._owner)
 
             expect(balanceOwnerPost.sub(balanceOwnerPre)).to.be.bignumber.equal(balanceContract)
+        });
+    });
+
+    describe("virtual tokens", function() {
+        let poolSpec = {
+            _maxStake : auctionSpec._reserveStake,
+            _totalReward : new BN('500').mul(FET_ERC20.multiplier),
+            _owner : accounts[0]
+        }
+        poolSpec.rewardPerTok = calc_rewardPerTok(poolSpec)
+
+        let virtTokenHolderAddr = accounts[1]
+        let limit = FET_ERC20._initialSupply
+
+        beforeEach(async function() {
+            // redeploy token to ensure inital balance is correct
+            token = await deployToken(auctionSpec, accounts, initialBalance);
+            instance = await dutchStaking.new(token.address);
+            await approveAll(auctionSpec, token, instance, accounts);
+            await initialiseAuction(auctionSpec, token, instance);
+        });
+
+        describe("owner functions", function() {
+            it("should allow the owner to define virtTokenHolder addresses", async () => {
+                assert.isNotOk(await instance.virtTokenHolders__isHolder.call(virtTokenHolderAddr))
+                await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
+                assert.ok(await instance.virtTokenHolders__isHolder.call(virtTokenHolderAddr))
+                await instance.setVirtTokenHolder(virtTokenHolderAddr, false, limit, true)
+                assert.isNotOk(await instance.virtTokenHolders__isHolder.call(virtTokenHolderAddr))
+            });
+            it("should allow the owner to set the virtualTokenLimit", async () => {
+                await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
+
+                expect(await instance.virtTokenHolders__limit.call(virtTokenHolderAddr)).to.be.bignumber.equal(limit)
+
+                await instance.setVirtTokenLimit(virtTokenHolderAddr, 10)
+                expect(await instance.virtTokenHolders__limit.call(virtTokenHolderAddr)).to.be.bignumber.equal('10')
+            });
+            it("should restrict access to the functions to the owner", async () => {
+                let notOwner = accounts[1]
+
+                await expectRevert(instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true, {from: notOwner}), "Owner only")
+                await expectRevert(instance.setVirtTokenLimit(virtTokenHolderAddr, 10, {from: notOwner}), "Owner only")
+            });
+            it("should not allow virtTokenHolder addresses to register pools or take part in them", async () => {
+                let pledge = new BN('10')
+                await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
+
+                await registerWalletPool(token, instance, poolSpec, auctionSpec._AID)
+                await expectRevert(instance.pledgeStake(auctionSpec._AID, poolSpec._owner, pledge, {from: virtTokenHolderAddr}), "Not allowed for virtTokenHolders")
+
+                let poolSpec1 = Object.assign({}, poolSpec);
+                poolSpec1._owner = virtTokenHolderAddr
+                await expectRevert(registerWalletPool(token, instance, poolSpec1, auctionSpec._AID, {from: virtTokenHolderAddr}), "Not allowed for virtTokenHolders")
+            });
+        });
+        describe("usage", function() {
+            let expectedSlots = new BN('3')
+            let amount = auctionSpec._reserveStake.mul(expectedSlots)
+            let expectedReward = auctionSpec._rewardPerSlot.mul(expectedSlots)
+
+            beforeEach(async function() {
+                await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
+            });
+
+            it("should allow virtTokenHolder addresses to make a bid without transfering tokens", async () => {
+                let balancePre = await token.balanceOf.call(virtTokenHolderAddr)
+                await advanceToPrice(instance, amount, auctionSpec._reserveStake)
+                await instance.bid(amount, {from: virtTokenHolderAddr})
+                let balancePost = await token.balanceOf.call(virtTokenHolderAddr)
+                expect(balancePost).to.be.bignumber.equal(balancePre)
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal(amount)
+
+                await advanceAndFinaliseAuction(auctionSpec, instance, {finalPrice: auctionSpec._reserveStake})
+                expect(await instance.getFinalStakerSlots.call(virtTokenHolderAddr)).to.be.bignumber.equal(expectedSlots)
+            });
+
+            it("should distribute rewards to the dedicated storage and not to selfStakerDeposits, allow to withdraw only them and reset selfStakerDeposits at endLockup", async () => {
+                await advanceToPrice(instance, amount, auctionSpec._reserveStake)
+                await instance.bid(amount, {from: virtTokenHolderAddr})
+                await advanceAndFinaliseAuction(auctionSpec, instance, {finalPrice: auctionSpec._reserveStake})
+                await advanceAndEndLockup(auctionSpec, instance)
+
+                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal(expectedReward)
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+
+                await instance.withdrawSelfStake({from: virtTokenHolderAddr})
+                expect(await token.balanceOf(virtTokenHolderAddr)).to.be.bignumber.equal(initialBalance.add(expectedReward))
+                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+            });
+            it("should not allow virtTokenHolder addresses to bid more than virtualTokenLimit, but should allow others to do so", async () => {
+                let newLimit = amount.sub( new BN('1') )
+                await instance.setVirtTokenLimit(virtTokenHolderAddr, newLimit)
+
+                await advanceToPrice(instance, amount, auctionSpec._reserveStake)
+                await expectRevert(instance.bid(amount, {from: virtTokenHolderAddr}), "Virtual tokens above limit")
+                await instance.bid(amount, {from: accounts[0]})
+            });
+            it("should reset the selfStakerDeposits if auction is aborted / not allow to bid more than the limit in following auctions", async () => {
+                let singleSlotAmount = auctionSpec._reserveStake
+                let expectedRewardAuction1 = auctionSpec._rewardPerSlot
+                let expectedRewardBothAuctions = auctionSpec._rewardPerSlot.mul( new BN('2') )
+                let auctionSpec2 = Object.assign({}, auctionSpec);
+                auctionSpec2._AID = 2
+                let payoutRewards = true
+
+                await advanceToPrice(instance, singleSlotAmount, auctionSpec._reserveStake)
+                await instance.bid(singleSlotAmount, {from: virtTokenHolderAddr})
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal(singleSlotAmount)
+                await advanceAndFinaliseAuction(auctionSpec, instance, {finalPrice: auctionSpec._reserveStake})
+
+                await instance.abortAuction(payoutRewards)
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+                // ensure second auction has the same rewards per slot for simplicity
+                await instance.retrieveUndistributedAuctionRewards({from: auctionSpec._owner})
+
+                await initialiseAuction(auctionSpec2, token, instance);
+
+                await advanceToPrice(instance, singleSlotAmount, auctionSpec2._reserveStake)
+                await instance.bid(singleSlotAmount, {from: virtTokenHolderAddr})
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal(singleSlotAmount)
+                await advanceAndFinaliseAuction(auctionSpec2, instance, {finalPrice: auctionSpec2._reserveStake})
+                await advanceAndEndLockup(auctionSpec2, instance)
+
+                await instance.withdrawSelfStake({from: virtTokenHolderAddr})
+                expect(await token.balanceOf(virtTokenHolderAddr)).to.be.bignumber.equal(initialBalance.add(expectedRewardBothAuctions))
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+            });
+        });
+
+        describe("remove isVirtTokenHolder property", function() {
+            let expectedSlots = new BN('3')
+            let amount = auctionSpec._reserveStake.mul(expectedSlots)
+            let expectedReward = auctionSpec._rewardPerSlot.mul(expectedSlots)
+
+            beforeEach(async function() {
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+                await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
+                await advanceToPrice(instance, amount, auctionSpec._reserveStake)
+                await instance.bid(amount, {from: virtTokenHolderAddr})
+                await advanceAndFinaliseAuction(auctionSpec, instance, {finalPrice: auctionSpec._reserveStake})
+                await advanceAndEndLockup(auctionSpec, instance)
+                await instance.retrieveUndistributedAuctionRewards({from: auctionSpec._owner})
+                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal(expectedReward)
+            });
+
+            it("should allow to preserve rewards when removing the isVirtTokenHolder property", async () => {
+                await instance.setVirtTokenHolder(virtTokenHolderAddr, false, limit, true)
+                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal(expectedReward)
+            });
+            it("should allow to reclaim rewards when removing the isVirtTokenHolder property", async () => {
+                await instance.setVirtTokenHolder(virtTokenHolderAddr, false, limit, false)
+                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+                expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+                expect(await instance.totalAuctionRewards.call()).to.be.bignumber.equal(expectedReward)
+            });
         });
     });
 });
