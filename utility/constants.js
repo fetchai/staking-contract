@@ -1,6 +1,5 @@
 const BN = require('bn.js');
 
-
 // have to match contract global constants
 exports.AuctionConstants = {
   _reserve_price_duration: 25,

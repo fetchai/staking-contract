@@ -72,9 +72,9 @@ contract("dutchStaking - selfStaking", async accounts => {
             expect( await token.decimals()).to.be.bignumber.equal('18')
             expect( await token.totalSupply()).to.be.bignumber.equal('1152997575000000000000000000')
         });
-        it("should release the token", async () => {
-            expect(await token.released()).to.be.true
-        });
+        //it("should release the token", async () => {
+        //    expect(await token.released()).to.be.true
+        //});
     });
 
     describe("Initialise an auction", function() {
@@ -216,7 +216,7 @@ contract("dutchStaking - selfStaking", async accounts => {
             let currentPrice = await instance.getCurrentPrice.call()
             await instance.bid(0, {from: bidder})
 
-            expect(await instance.auction__slotsSold.call()).to.be.bignumber.equal('1')
+            expect((await instance.auction.call()).slotsSold).to.be.bignumber.equal('1')
             await expectRevert(instance.getFinalStakerSlots.call(bidder), "Slots not yet final")
         });
         it("should not allow multiple bids from same address", async () => {
@@ -278,7 +278,7 @@ contract("dutchStaking - selfStaking", async accounts => {
             let amount = auctionSpec._startStake.mul( new BN('3') )//.add( new BN('12232434123'))
             expect(await instance.getCurrentPrice.call()).to.be.bignumber.lt( amount.toString() )
             await instance.bid(amount, {from: bidder})
-            expect(await instance.auction__slotsSold.call()).to.be.bignumber.equal('3')
+            expect((await instance.auction.call()).slotsSold).to.be.bignumber.equal('3')
         });
     });
 
@@ -296,8 +296,8 @@ contract("dutchStaking - selfStaking", async accounts => {
             await expectEvent.inLogs(receipt.logs, "AuctionFinalised", {AID: new BN(1),
                                                                         finalPrice: trueFinalPrice,
                                                                         slotsSold: new BN(expectedTotalSlotsSold)})
-            expect(await instance.auction__finalPrice.call()).to.be.bignumber.equal(trueFinalPrice)
-            expect(await instance.auction__slotsSold.call()).to.be.bignumber.equal(expectedTotalSlotsSold)
+            expect((await instance.auction.call()).finalPrice).to.be.bignumber.equal(trueFinalPrice)
+            expect((await instance.auction.call()).slotsSold).to.be.bignumber.equal(expectedTotalSlotsSold)
             assert.ok(instance.isFinalised.call())
             // check resulting slots of all bidders
             let slotsWon = await Promise.all(bidders.map(getSlots))
@@ -622,8 +622,8 @@ contract("dutchStaking - selfStaking", async accounts => {
                 assert.ok(auctionSpec._rewardPerSlot > 0, "Test should have positive rewards")
                 await advanceAndFinaliseAuction(auctionSpec, instance, {finalPrice: trueFinalPrice})
                 // check auction status
-                expect(await instance.auction__finalPrice.call()).to.be.bignumber.equal(trueFinalPrice)
-                expect(await instance.auction__slotsSold.call()).to.be.bignumber.equal(expectedTotalSlotsSold)
+                expect((await instance.auction.call()).finalPrice).to.be.bignumber.equal(trueFinalPrice)
+                expect((await instance.auction.call()).slotsSold).to.be.bignumber.equal(expectedTotalSlotsSold)
                 assert.ok(instance.isFinalised.call())
                 let slotsWon = await Promise.all(bidders.map(getSlots))
                 assert.deepEqual(slotsWon, expectedSlotsWon)
@@ -709,7 +709,7 @@ contract("dutchStaking - selfStaking", async accounts => {
             [enteredBids1, _] = await addNBids(instance, auctionSpec1, auctionSpec1.bidders)
 
             await advanceAndFinaliseAuction(auctionSpec1, instance, {enteredBids: enteredBids1})
-            auctionSpec1.finalStake = await instance.auction__finalPrice.call()
+            auctionSpec1.finalStake = (await instance.auction.call()).finalPrice
             slotsWon1 = await Promise.all(accounts.map(getSlots))
             assert.deepEqual(slotsWon1, expectedSlotsWon1)
             await advanceAndEndLockup(auctionSpec1, instance)
@@ -833,10 +833,10 @@ contract("dutchStaking - selfStaking", async accounts => {
             await expectEvent.inLogs(receipt.logs, "AuctionAborted", {AID: new BN(auctionSpec._AID),
                                                                       rewardsPaid: false})
 
-            expect(await instance.auction__start.call()).to.be.bignumber.equal('0')
-            expect(await instance.auction__lockupEnd.call()).to.be.bignumber.equal('0')
-            expect(await instance.auction__slotsSold.call()).to.be.bignumber.equal('0')
-            expect(await instance.auction__rewardPerSlot.call()).to.be.bignumber.equal('0')
+            expect((await instance.auction.call()).start).to.be.bignumber.equal('0')
+            expect((await instance.auction.call()).lockupEnd).to.be.bignumber.equal('0')
+            expect((await instance.auction.call()).slotsSold).to.be.bignumber.equal('0')
+            expect((await instance.auction.call()).rewardPerSlot).to.be.bignumber.equal('0')
 
             let auctionSpecCopy = Object.assign({}, auctionSpec);
             auctionSpecCopy._AID = auctionSpec._AID + 1
@@ -967,19 +967,19 @@ contract("dutchStaking - selfStaking", async accounts => {
 
         describe("owner functions", function() {
             it("should allow the owner to define virtTokenHolder addresses", async () => {
-                assert.isNotOk(await instance.virtTokenHolders__isHolder.call(virtTokenHolderAddr))
+                assert.isNotOk((await instance.virtTokenHolders.call(virtTokenHolderAddr)).isHolder)
                 await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
-                assert.ok(await instance.virtTokenHolders__isHolder.call(virtTokenHolderAddr))
+                assert.ok((await instance.virtTokenHolders.call(virtTokenHolderAddr)).isHolder)
                 await instance.setVirtTokenHolder(virtTokenHolderAddr, false, limit, true)
-                assert.isNotOk(await instance.virtTokenHolders__isHolder.call(virtTokenHolderAddr))
+                assert.isNotOk((await instance.virtTokenHolders.call(virtTokenHolderAddr)).isHolder)
             });
             it("should allow the owner to set the virtualTokenLimit", async () => {
                 await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
 
-                expect(await instance.virtTokenHolders__limit.call(virtTokenHolderAddr)).to.be.bignumber.equal(limit)
+                expect((await instance.virtTokenHolders.call(virtTokenHolderAddr)).limit).to.be.bignumber.equal(limit)
 
                 await instance.setVirtTokenLimit(virtTokenHolderAddr, 10)
-                expect(await instance.virtTokenHolders__limit.call(virtTokenHolderAddr)).to.be.bignumber.equal('10')
+                expect((await instance.virtTokenHolders.call(virtTokenHolderAddr)).limit).to.be.bignumber.equal('10')
             });
             it("should restrict access to the functions to the owner", async () => {
                 let notOwner = accounts[1]
@@ -1026,12 +1026,12 @@ contract("dutchStaking - selfStaking", async accounts => {
                 await advanceAndFinaliseAuction(auctionSpec, instance, {finalPrice: auctionSpec._reserveStake})
                 await advanceAndEndLockup(auctionSpec, instance)
 
-                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal(expectedReward)
+                expect((await instance.virtTokenHolders.call(virtTokenHolderAddr)).rewards).to.be.bignumber.equal(expectedReward)
                 expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
 
                 await instance.withdrawSelfStake({from: virtTokenHolderAddr})
                 expect(await token.balanceOf(virtTokenHolderAddr)).to.be.bignumber.equal(initialBalance.add(expectedReward))
-                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+                expect((await instance.virtTokenHolders.call(virtTokenHolderAddr)).rewards).to.be.bignumber.equal('0')
             });
             it("should not allow virtTokenHolder addresses to bid more than virtualTokenLimit, but should allow others to do so", async () => {
                 let newLimit = amount.sub( new BN('1') )
@@ -1086,20 +1086,22 @@ contract("dutchStaking - selfStaking", async accounts => {
                 await advanceAndFinaliseAuction(auctionSpec, instance, {finalPrice: auctionSpec._reserveStake})
                 await advanceAndEndLockup(auctionSpec, instance)
                 await instance.retrieveUndistributedAuctionRewards({from: auctionSpec._owner})
-                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal(expectedReward)
+                expect((await instance.virtTokenHolders.call(virtTokenHolderAddr)).rewards).to.be.bignumber.equal(expectedReward)
             });
 
             it("should allow to preserve rewards when removing the isVirtTokenHolder property", async () => {
                 await instance.setVirtTokenHolder(virtTokenHolderAddr, false, limit, true)
-                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+                expect((await instance.virtTokenHolders.call(virtTokenHolderAddr)).rewards).to.be.bignumber.equal('0')
                 expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal(expectedReward)
             });
             it("should allow to reclaim rewards when removing the isVirtTokenHolder property", async () => {
                 await instance.setVirtTokenHolder(virtTokenHolderAddr, false, limit, false)
-                expect(await instance.virtTokenHolders__rewards.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
+                expect((await instance.virtTokenHolders.call(virtTokenHolderAddr)).rewards).to.be.bignumber.equal('0')
                 expect(await instance.selfStakerDeposits.call(virtTokenHolderAddr)).to.be.bignumber.equal('0')
                 expect(await instance.totalAuctionRewards.call()).to.be.bignumber.equal(expectedReward)
             });
         });
     });
 });
+
+
