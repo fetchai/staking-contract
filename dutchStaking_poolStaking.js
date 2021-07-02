@@ -726,6 +726,7 @@ contract("dutchStaking - pool staking", async accounts => {
 
             expect(await instance.poolDeposits.call(poolSpec1._owner)).to.be.bignumber.equal('0')
 
+            
             const slotsWon2 = await endAuctionGetSlots(auctionSpec2, poolSpec1)
 
             expect(slotsWon1).to.be.bignumber.equal('1')
