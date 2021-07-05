@@ -23,16 +23,12 @@ npm install
 
 Truffle and Ganache-cli:
 ```
-npm install -g truffle@v5.0.36-migrate-describe.1
+npm install -g truffle
 npm install -g ganache-cli
 ```
 
 Running tests:
 
-On truffle testnet
-```
-truffle test
-```
 On ganache
 ```
 ganache-cli
