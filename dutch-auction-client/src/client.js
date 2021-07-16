@@ -46,8 +46,7 @@ module.exports.bid = async (req, res) => {
 module.exports.finaliseAuction = async (req, res) => {
 	try {
 		var idInfo = req.body;
-		var finalPrice = idInfo.finalPrice;
-		return await utils.finaliseAuction(finalPrice)
+		return await utils.finaliseAuction()
 
 	} catch(err) {
 		console.log(err)
@@ -482,6 +481,16 @@ module.exports.getAuction = async (req, res) => {
 module.exports.getCurrentStakers = async (req, res) => {
 	try {
 		return await utils.getCurrentStakers()
+		
+	} catch(err) {
+		console.log(err)
+	}
+}
+
+
+module.exports.getLastBidPrice = async (req, res) => {
+	try {
+		return await utils.getLastBidPrice()
 		
 	} catch(err) {
 		console.log(err)

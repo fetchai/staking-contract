@@ -1,4 +1,4 @@
-const validateEnv = require('./envUtils').validateEnv;
+const validateEnv = require('./envutils').validateEnv;
 const isRopsten = validateEnv('ROPSTEN_NETWORK');
 let url;
 

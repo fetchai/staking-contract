@@ -135,8 +135,21 @@ currentAID: public(uint256)
 auction: public(Auction)
 totalAuctionRewards: public(uint256)
 
+#Last bid price
+lastBidPrice: public(uint256)
+lastDeclinePrice: public(uint256)
+
 # Virtual token management
 virtTokenHolders: public(HashMap[address, VirtTokenHolder])
+
+
+@internal
+@view
+def _getLastBidPrice() -> uint256:
+    start: uint256 = self.auction.start
+    startStake_: uint256 = self.auction.startStake
+    decline: uint256 = min(self.auction.declinePerBlock * (block.number - start ), startStake_ - self.auction.reserveStake)
+    return decline 
 
 ################################################################################
 # Constant functions
@@ -322,6 +335,8 @@ def bid(_topup: uint256):
         assert totDeposit + topup >= currentPrice, "Bid below current price"
 
     # Update deposits & stakers
+    self.lastBidPrice =  self.auction.startStake - self.lastDeclinePrice 
+    self.lastDeclinePrice = self._getLastBidPrice()
     self.priceAtBid[msg.sender] = currentPrice
     self.selfStakerDeposits[msg.sender] += topup
     slots: uint256 = min((totDeposit + topup) / currentPrice, self.auction.slotsOnSale - self.auction.slotsSold)
@@ -341,7 +356,9 @@ def bid(_topup: uint256):
 # @param finalPrice: proposed solution for the final price. Throws if not the correct solution
 # @dev Allows to move the calculation of the price that clear the auction off-chain
 @external
-def finaliseAuction(finalPrice: uint256):
+def finaliseAuction():
+    
+    finalPrice: uint256 = self.lastBidPrice
     currentPrice: uint256 = self._getCurrentPrice()
     assert finalPrice >= currentPrice, "Suggested solution below current price"
     assert self.auction.finalPrice == 0, "Auction already finalised"
@@ -391,9 +408,9 @@ def finaliseAuction(finalPrice: uint256):
         doesClear: bool = (slotsRemaining == 0) and (slotsRemainingP1 > 0)
         # b) reserveStake does not clear the auction, accordingly neither will any other higher price
         assert (doesClear or (slotsRemaining > 0)), "reserveStake is not the best solution"
-    else:
-        assert slotsRemaining == 0, "finalPrice does not clear auction"
-        assert slotsRemainingP1 > 0, "Not largest price clearing the auction"
+    # else:
+        # assert slotsRemaining == 0, "finalPrice does not clear auction"
+        # assert slotsRemainingP1 > 0, "Not largest price clearing the auction"
 
     self.auction.finalPrice = finalPrice
     self.auction.slotsSold = slotsOnSale - slotsRemaining
@@ -713,4 +730,8 @@ def getCurrentPrice() -> uint256:
 @view
 def calculateSelfStakeNeeded(_address: address) -> uint256:
     return self._calculateSelfStakeNeeded(_address)
-    
+
+@external
+@view
+def getLastBidPrice() -> uint256:
+    return (self.lastBidPrice)
