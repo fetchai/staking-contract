@@ -1,7 +1,7 @@
 {
 	"info": {
-		"_postman_id": "11540f73-a877-4658-8ac0-af48b919ae80",
-		"name": "Dutch Auction",
+		"_postman_id": "8b72efe0-3115-4ef7-a35b-53afa1648edf",
+		"name": "Dutch Auction Copy",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -647,6 +647,15 @@
 						"allowance"
 					]
 				}
+			},
+			"response": []
+		},
+		{
+			"name": "getLastBidPrice",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": null
 			},
 			"response": []
 		}

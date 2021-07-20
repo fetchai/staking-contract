@@ -46,7 +46,8 @@ module.exports.bid = async (req, res) => {
 module.exports.finaliseAuction = async (req, res) => {
 	try {
 		var idInfo = req.body;
-		return await utils.finaliseAuction()
+		var finalPrice = idInfo.finalPrice;
+		return await utils.finaliseAuction(finalPrice)
 
 	} catch(err) {
 		console.log(err)

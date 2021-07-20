@@ -151,9 +151,9 @@ module.exports.bid = async (bidder_address, amount) => {
     }
 }
 
-module.exports.finaliseAuction = async () => {
+module.exports.finaliseAuction = async (finalPrice) => {
     try {
-        let  result = await contract.methods.finaliseAuction().send()
+        let  result = await contract.methods.finaliseAuction(finalPrice).send()
         console.log(result)
         return {
             status:{

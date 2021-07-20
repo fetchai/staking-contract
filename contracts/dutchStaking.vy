@@ -356,9 +356,11 @@ def bid(_topup: uint256):
 # @param finalPrice: proposed solution for the final price. Throws if not the correct solution
 # @dev Allows to move the calculation of the price that clear the auction off-chain
 @external
-def finaliseAuction():
+def finaliseAuction(inComingfinalPrice: uint256):
+    finalPrice: uint256 = self._getCurrentPrice()
+    if(inComingfinalPrice > 0):
+        finalPrice = inComingfinalPrice
     
-    finalPrice: uint256 = self.lastBidPrice
     currentPrice: uint256 = self._getCurrentPrice()
     assert finalPrice >= currentPrice, "Suggested solution below current price"
     assert self.auction.finalPrice == 0, "Auction already finalised"
