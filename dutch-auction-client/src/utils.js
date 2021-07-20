@@ -39,7 +39,7 @@ const Tx = require('ethereumjs-tx')
 const fs = require('fs');
 const path = require('path');
 const validateEnv = require('./envutils').validateEnv;
-const web3 = new Web3(new Web3.providers.HttpProvider("https://ropsten.infura.io/v3/2408dd1a4d574ce889b35dd0a431e4ea"));
+const web3 = new Web3(new Web3.providers.HttpProvider("https://rinkeby.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"));
 const PRIVATE_KEY = '1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606'
 web3.eth.accounts.wallet.add(PRIVATE_KEY)
 const account = validateEnv('CONTRACT_ACCOUNT');
