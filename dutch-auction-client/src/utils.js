@@ -101,7 +101,7 @@ module.exports.getERC20Address = async () => {
 
 module.exports.retrieveUndistributedAuctionRewards = async () => {
     try {
-        let  result = await contract.methods.retrieveUndistributedAuctionRewards().call()
+        let  result = await contract.methods.retrieveUndistributedAuctionRewards().send()
         console.log(result)
         return {
             status:{
@@ -176,7 +176,7 @@ module.exports.finaliseAuction = async (finalPrice) => {
 
 module.exports.endLockup = async () => {
     try {
-        let  result = await contract.methods.endLockup().call()
+        let  result = await contract.methods.endLockup().send()
         console.log(result)
         return {
             status:{
@@ -245,7 +245,7 @@ module.exports.withdrawSelfStake = async () => {
 
 module.exports.deleteContract = async () => {
     try {
-        let  result = await contract.methods.deleteContract().call()
+        let  result = await contract.methods.deleteContract().send()
         console.log(result)
         return {
             status:{
