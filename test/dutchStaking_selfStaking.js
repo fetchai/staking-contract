@@ -1,5 +1,5 @@
 const { BN, constants, expectEvent, expectRevert, time } = require('openzeppelin-test-helpers');
-const { expect, assert } = require('chai');
+const { expect } = require('chai');
 
 const dutchStaking = artifacts.require("dutchStaking");
 
@@ -1011,17 +1011,17 @@ contract("dutchStaking - selfStaking", async accounts => {
                 await expectRevert(instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true, {from: notOwner}), "Owner only")
                 await expectRevert(instance.setVirtTokenLimit(virtTokenHolderAddr, 10, {from: notOwner}), "Owner only")
             });
-            it("should not allow virtTokenHolder addresses to register pools or take part in them", async () => {
-                let pledge = new BN('10')
-                await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
+            // it("should not allow virtTokenHolder addresses to register pools or take part in them", async () => {
+            //     let pledge = new BN('10')
+            //     await instance.setVirtTokenHolder(virtTokenHolderAddr, true, limit, true)
 
-                await registerWalletPool(token, instance, poolSpec, auctionSpec._AID)
-                await expectRevert(instance.pledgeStake(auctionSpec._AID, poolSpec._owner, pledge, {from: virtTokenHolderAddr}), "Not allowed for virtTokenHolders")
+            //     await registerWalletPool(token, instance, poolSpec, auctionSpec._AID)
+            //     await expectRevert(instance.pledgeStake(auctionSpec._AID, poolSpec._owner, pledge, {from: virtTokenHolderAddr}), "Not allowed for virtTokenHolders")
 
-                let poolSpec1 = Object.assign({}, poolSpec);
-                poolSpec1._owner = virtTokenHolderAddr
-                await expectRevert(registerWalletPool(token, instance, poolSpec1, auctionSpec._AID, {from: virtTokenHolderAddr}), "Not allowed for virtTokenHolders")
-            });
+            //     let poolSpec1 = Object.assign({}, poolSpec);
+            //     poolSpec1._owner = virtTokenHolderAddr
+            //     await expectRevert(registerWalletPool(token, instance, poolSpec1, auctionSpec._AID, {from: virtTokenHolderAddr}), "Not allowed for virtTokenHolders")
+            // });
         });
         describe("usage", function() {
             let expectedSlots = new BN('3')

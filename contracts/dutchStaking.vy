@@ -45,15 +45,15 @@ struct Auction:
     rewardPerSlot: uint256
     uniqueStakers: uint256
 
-struct Pledge:
-    amount: uint256
-    AID: uint256
-    pool: address
+# struct Pledge:
+#     amount: uint256
+#     AID: uint256
+#     pool: address
 
-struct Pool:
-    remainingReward: uint256
-    rewardPerTok: uint256
-    AID: uint256
+# struct Pool:
+#     remainingReward: uint256
+#     rewardPerTok: uint256
+#     AID: uint256
 
 struct VirtTokenHolder:
     isHolder: bool
@@ -79,21 +79,21 @@ event NewAuction:
     declinePerBlock: uint256
     slotsOnSale: uint256
     rewardPerSlot: uint256
-event PoolRegistration: 
-    AID: uint256
-    _address: address
-    maxStake: uint256
-    rewardPerTok: uint256
-event NewPledge: 
-    AID: uint256
-    _from: indexed(address)
-    operator: address
-    amount: uint256
-event IncreasedPledge: 
-    AID: uint256
-    _from: indexed(address)
-    operator: address
-    topup: uint256
+# event PoolRegistration: 
+#     AID: uint256
+#     _address: address
+#     maxStake: uint256
+#     rewardPerTok: uint256
+# event NewPledge: 
+#     AID: uint256
+#     _from: indexed(address)
+#     operator: address
+#     amount: uint256
+# event IncreasedPledge: 
+#     AID: uint256
+#     _from: indexed(address)
+#     operator: address
+#     topup: uint256
 event AuctionFinalised: 
     AID: uint256
     finalPrice: uint256
@@ -122,34 +122,21 @@ stakers: address[MAX_SLOTS]
 # pledged stake + committed pool reward, excl. selfStakerDeposit; pool -> deposits
 poolDeposits: public(HashMap[address, uint256])
 # staker (through pool) -> Pledge{pool, amount}
-pledges: public(HashMap[address, Pledge])
+# pledges: public(HashMap[address, Pledge])
 # staker (directly) -> amount
 selfStakerDeposits: public(HashMap[address, uint256])
 # staker (directly) -> price at which the bid was made
 priceAtBid: public(HashMap[address, uint256])
 # pool address -> Pool
-registeredPools: public(HashMap[address, Pool])
+# registeredPools: public(HashMap[address, Pool])
 
 # Auction details
 currentAID: public(uint256)
 auction: public(Auction)
 totalAuctionRewards: public(uint256)
 
-#Last bid price
-lastBidPrice: public(uint256)
-lastDeclinePrice: public(uint256)
-
 # Virtual token management
 virtTokenHolders: public(HashMap[address, VirtTokenHolder])
-
-
-@internal
-@view
-def _getLastBidPrice() -> uint256:
-    start: uint256 = self.auction.start
-    startStake_: uint256 = self.auction.startStake
-    decline: uint256 = min(self.auction.declinePerBlock * (block.number - start ), startStake_ - self.auction.reserveStake)
-    return decline 
 
 ################################################################################
 # Constant functions
@@ -315,17 +302,17 @@ def bid(_topup: uint256):
     assert (_isVirtTokenHolder == False) or (_topup <= self.virtTokenHolders[msg.sender].limit), "Virtual tokens above limit"
 
     # If pool: move unclaimed rewards and clear
-    if self.registeredPools[msg.sender].AID == _currentAID:
-        unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
-        self.registeredPools[msg.sender] = empty(Pool)
-        self.poolDeposits[msg.sender] -= unclaimed
-        self.selfStakerDeposits[msg.sender] += unclaimed
+    # if self.registeredPools[msg.sender].AID == _currentAID:
+    #     unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
+    #     self.registeredPools[msg.sender] = empty(Pool)
+    #     self.poolDeposits[msg.sender] -= unclaimed
+    #     self.selfStakerDeposits[msg.sender] += unclaimed
     # if address was a pool in a previous auction and not the current one: reset poolDeposits
     # do not rely on self.registeredPools[msg.sender].AID as this gets cleared at certain points
-    elif self.poolDeposits[msg.sender] > 0:
-        self.poolDeposits[msg.sender] = empty(uint256)
+    # elif self.poolDeposits[msg.sender] > 0:
+    #     self.poolDeposits[msg.sender] = empty(uint256)
 
-    totDeposit: uint256 = self.poolDeposits[msg.sender] + self.selfStakerDeposits[msg.sender]
+    totDeposit: uint256 = self.selfStakerDeposits[msg.sender]
 
     # cannot modify input argument
     topup: uint256 = _topup
@@ -335,8 +322,6 @@ def bid(_topup: uint256):
         assert totDeposit + topup >= currentPrice, "Bid below current price"
 
     # Update deposits & stakers
-    self.lastBidPrice =  self.auction.startStake - self.lastDeclinePrice 
-    self.lastDeclinePrice = self._getLastBidPrice()
     self.priceAtBid[msg.sender] = currentPrice
     self.selfStakerDeposits[msg.sender] += topup
     slots: uint256 = min((totDeposit + topup) / currentPrice, self.auction.slotsOnSale - self.auction.slotsSold)
@@ -356,11 +341,7 @@ def bid(_topup: uint256):
 # @param finalPrice: proposed solution for the final price. Throws if not the correct solution
 # @dev Allows to move the calculation of the price that clear the auction off-chain
 @external
-def finaliseAuction(inComingfinalPrice: uint256):
-    finalPrice: uint256 = self._getCurrentPrice()
-    if(inComingfinalPrice > 0):
-        finalPrice = inComingfinalPrice
-    
+def finaliseAuction(finalPrice: uint256):
     currentPrice: uint256 = self._getCurrentPrice()
     assert finalPrice >= currentPrice, "Suggested solution below current price"
     assert self.auction.finalPrice == 0, "Auction already finalised"
@@ -410,9 +391,9 @@ def finaliseAuction(inComingfinalPrice: uint256):
         doesClear: bool = (slotsRemaining == 0) and (slotsRemainingP1 > 0)
         # b) reserveStake does not clear the auction, accordingly neither will any other higher price
         assert (doesClear or (slotsRemaining > 0)), "reserveStake is not the best solution"
-    # else:
-        # assert slotsRemaining == 0, "finalPrice does not clear auction"
-        # assert slotsRemainingP1 > 0, "Not largest price clearing the auction"
+    else:
+        assert slotsRemaining == 0, "finalPrice does not clear auction"
+        assert slotsRemainingP1 > 0, "Not largest price clearing the auction"
 
     self.auction.finalPrice = finalPrice
     self.auction.slotsSold = slotsOnSale - slotsRemaining
@@ -478,49 +459,49 @@ def abortAuction(payoutRewards: bool):
 # @param _rewardPerTok: _rewardPerTok / REWARD_PER_TOK_DENOMINATOR will be paid
 #   for each stake pledged to the pool. Meaning _rewardPerTok should equal
 #   reward per token * REWARD_PER_TOK_DENOMINATOR (see getDenominator())
-@external
-def registerPool(AID: uint256,
-                 _totalReward: uint256,
-                 _rewardPerTok: uint256):
-    assert AID == self.currentAID, "Not current auction"
-    assert self._isBiddingPhase(), "Not in bidding phase"
-    assert self.registeredPools[msg.sender].AID < AID, "Pool already exists"
-    assert self.registeredPools[msg.sender].remainingReward == 0, "Unclaimed rewards"
-    assert self.virtTokenHolders[msg.sender].isHolder == False, "Not allowed for virtTokenHolders"
+# @external
+# def registerPool(AID: uint256,
+#                  _totalReward: uint256,
+#                  _rewardPerTok: uint256):
+#     assert AID == self.currentAID, "Not current auction"
+#     assert self._isBiddingPhase(), "Not in bidding phase"
+#     assert self.registeredPools[msg.sender].AID < AID, "Pool already exists"
+#     assert self.registeredPools[msg.sender].remainingReward == 0, "Unclaimed rewards"
+#     assert self.virtTokenHolders[msg.sender].isHolder == False, "Not allowed for virtTokenHolders"
 
-    self.registeredPools[msg.sender] = Pool({remainingReward: _totalReward,
-                                             rewardPerTok: _rewardPerTok,
-                                             AID: AID})
-    # overwrite any poolDeposits that existed for the last auction
-    self.poolDeposits[msg.sender] = _totalReward
+#     self.registeredPools[msg.sender] = Pool({remainingReward: _totalReward,
+#                                              rewardPerTok: _rewardPerTok,
+#                                              AID: AID})
+#     # overwrite any poolDeposits that existed for the last auction
+#     self.poolDeposits[msg.sender] = _totalReward
 
-    success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(_totalReward))
-    assert success, "Transfer failed"
+#     success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(_totalReward))
+#     assert success, "Transfer failed"
 
-    maxStake: uint256 = (_totalReward * REWARD_PER_TOK_DENOMINATOR) / _rewardPerTok
-    log PoolRegistration(AID, msg.sender, maxStake, _rewardPerTok)
+#     maxStake: uint256 = (_totalReward * REWARD_PER_TOK_DENOMINATOR) / _rewardPerTok
+#     log PoolRegistration(AID, msg.sender, maxStake, _rewardPerTok)
 
 # @notice Move pool rewards that were not claimed by anyone into
 #   selfStakerDeposits. Automatically done if pool enters a bid.
 # @dev Requires that the auction has passed the bidding phase
-@external
-def retrieveUnclaimedPoolRewards():
-    assert ((self._isBiddingPhase() == False)
-             or (self.registeredPools[msg.sender].AID < self.currentAID)), "Bidding phase of AID not over"
+# @external
+# def retrieveUnclaimedPoolRewards():
+#     assert ((self._isBiddingPhase() == False)
+#              or (self.registeredPools[msg.sender].AID < self.currentAID)), "Bidding phase of AID not over"
 
-    unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
-    self.registeredPools[msg.sender] = empty(Pool)
+#     unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
+#     self.registeredPools[msg.sender] = empty(Pool)
 
-    self.poolDeposits[msg.sender] -= unclaimed
-    self.selfStakerDeposits[msg.sender] += unclaimed
+#     self.poolDeposits[msg.sender] -= unclaimed
+#     self.selfStakerDeposits[msg.sender] += unclaimed
 
-@internal
-def _updatePoolRewards(pool: address, newAmount: uint256) -> uint256:
-    newReward: uint256 = ((self.registeredPools[pool].rewardPerTok * newAmount)
-                                / REWARD_PER_TOK_DENOMINATOR)
-    assert self.registeredPools[pool].remainingReward >= newReward, "Rewards depleted"
-    self.registeredPools[pool].remainingReward -= newReward
-    return newReward
+# @internal
+# def _updatePoolRewards(pool: address, newAmount: uint256) -> uint256:
+#     newReward: uint256 = ((self.registeredPools[pool].rewardPerTok * newAmount)
+#                                 / REWARD_PER_TOK_DENOMINATOR)
+#     assert self.registeredPools[pool].remainingReward >= newReward, "Rewards depleted"
+#     self.registeredPools[pool].remainingReward -= newReward
+#     return newReward
 
 # @notice Pledge stake to a staking pool. Possible from auction intialisation
 #   until the end of the bidding phase or until the pool has made a bid.
@@ -534,53 +515,53 @@ def _updatePoolRewards(pool: address, newAmount: uint256) -> uint256:
 # @param pool: The address of the pool
 # @param amount: The new total amount, not the difference to existing pledges. If increasing the
 #   pledge, this has to include the pool rewards of the initial pledge
-@external
-def pledgeStake(AID: uint256, pool: address, amount: uint256):
-    assert AID == self.currentAID, "Not current AID"
-    assert self._isBiddingPhase(), "Not in bidding phase"
-    assert self.registeredPools[pool].AID == AID, "Not a registered pool"
-    assert self.virtTokenHolders[msg.sender].isHolder == False, "Not allowed for virtTokenHolders"
+# @external
+# def pledgeStake(AID: uint256, pool: address, amount: uint256):
+#     assert AID == self.currentAID, "Not current AID"
+#     assert self._isBiddingPhase(), "Not in bidding phase"
+#     assert self.registeredPools[pool].AID == AID, "Not a registered pool"
+#     assert self.virtTokenHolders[msg.sender].isHolder == False, "Not allowed for virtTokenHolders"
 
-    existingPledgeAmount: uint256 = self.pledges[msg.sender].amount
-    assert self.pledges[msg.sender].AID < AID, "Already pledged"
+#     existingPledgeAmount: uint256 = self.pledges[msg.sender].amount
+#     assert self.pledges[msg.sender].AID < AID, "Already pledged"
 
-    newReward: uint256 = self._updatePoolRewards(pool, amount)
+#     newReward: uint256 = self._updatePoolRewards(pool, amount)
 
-    # overwriting any existing amount
-    self.pledges[msg.sender] = Pledge({amount: amount + newReward,
-                                                  AID: AID,
-                                                  pool: pool})
-    # pool reward is already added to poolDeposits during registerPool() call
-    self.poolDeposits[pool] += amount
+#     # overwriting any existing amount
+#     self.pledges[msg.sender] = Pledge({amount: amount + newReward,
+#                                                   AID: AID,
+#                                                   pool: pool})
+#     # pool reward is already added to poolDeposits during registerPool() call
+#     self.poolDeposits[pool] += amount
 
-    if amount > existingPledgeAmount:
-        success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(amount - existingPledgeAmount))
-        assert success, "Transfer failed"
-    elif amount < existingPledgeAmount:
-        success: bool = self.token.transfer(msg.sender, self.as_unitless_number(existingPledgeAmount - amount))
-        assert success, "Transfer failed"
+#     if amount > existingPledgeAmount:
+#         success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(amount - existingPledgeAmount))
+#         assert success, "Transfer failed"
+#     elif amount < existingPledgeAmount:
+#         success: bool = self.token.transfer(msg.sender, self.as_unitless_number(existingPledgeAmount - amount))
+#         assert success, "Transfer failed"
 
-    log NewPledge(AID, msg.sender, pool, amount)
+#     log NewPledge(AID, msg.sender, pool, amount)
 
 # @notice Increase an existing pledge in the current auction
 # @dev Requires the auction to be in bidding phase and the pool to have enough rewards remaining
 # @param pool: The address of the pool. Has to match the pool of the initial pledge
 # @param topup: Value by which to increase the pledge
-@external
-def increasePledge(pool: address, topup: uint256):
-    AID: uint256 = self.currentAID
-    assert self._isBiddingPhase(), "Not in bidding phase"
-    assert self.pledges[msg.sender].AID == AID, "No pledge made in this auction yet"
-    assert self.pledges[msg.sender].pool == pool, "Cannot change pool"
+# @external
+# def increasePledge(pool: address, topup: uint256):
+#     AID: uint256 = self.currentAID
+#     assert self._isBiddingPhase(), "Not in bidding phase"
+#     assert self.pledges[msg.sender].AID == AID, "No pledge made in this auction yet"
+#     assert self.pledges[msg.sender].pool == pool, "Cannot change pool"
 
-    newReward: uint256 = self._updatePoolRewards(pool, topup)
-    self.pledges[msg.sender].amount += topup + newReward
-    self.poolDeposits[pool] += topup
+#     newReward: uint256 = self._updatePoolRewards(pool, topup)
+#     self.pledges[msg.sender].amount += topup + newReward
+#     self.poolDeposits[pool] += topup
 
-    success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(topup))
-    assert success, "Transfer failed"
+#     success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(topup))
+#     assert success, "Transfer failed"
 
-    log IncreasedPledge(AID, msg.sender, pool, topup)
+#     log IncreasedPledge(AID, msg.sender, pool, topup)
 
 # @notice Withdraw any self-stake exceeding the required lockup. In case sender is a bidder in the
 #   current auction, this requires the auction to be finalised through finaliseAuction(),
@@ -611,20 +592,20 @@ def withdrawSelfStake() -> uint256:
     return withdrawal
 
 # @notice Withdraw pledged stake after the lock-up has ended
-@external
-def withdrawPledgedStake() -> uint256:
-    withdrawal: uint256 = 0
-    if ((self.pledges[msg.sender].AID < self.currentAID)
-        or (self.auction.lockupEnd == 0)):
-        withdrawal += self.pledges[msg.sender].amount
-        self.pledges[msg.sender] = empty(Pledge)
+# @external
+# def withdrawPledgedStake() -> uint256:
+#     withdrawal: uint256 = 0
+#     if ((self.pledges[msg.sender].AID < self.currentAID)
+#         or (self.auction.lockupEnd == 0)):
+#         withdrawal += self.pledges[msg.sender].amount
+#         self.pledges[msg.sender] = empty(Pledge)
 
-    success: bool = self.token.transfer(msg.sender, self.as_unitless_number(withdrawal))
-    assert success, "Transfer failed"
+#     success: bool = self.token.transfer(msg.sender, self.as_unitless_number(withdrawal))
+#     assert success, "Transfer failed"
 
-    log PledgeWithdrawal(msg.sender, withdrawal)
+#     log PledgeWithdrawal(msg.sender, withdrawal)
 
-    return withdrawal
+#     return withdrawal
 
 # @notice Allow the owner to remove the contract, given that no auction is
 #   active and at least DELETE_PERIOD blocks have past since the last lock-up end.
@@ -654,9 +635,9 @@ def setVirtTokenHolder(_address: address, _isVirtTokenHolder: bool, limit: uint2
     assert msg.sender == self.owner, "Owner only"
     assert self.stakerSlots[_address] == 0, "Address has active slots"
     assert self.selfStakerDeposits[_address] == 0, "Address has positive selfStakerDeposits"
-    assert self.registeredPools[_address].remainingReward == 0, "Address has remainingReward"
-    assert self.pledges[_address].amount == 0, "Address has positive pledges"
-    assert (self.registeredPools[_address].AID < self.currentAID) or (self.auction.finalPrice == 0), "Address has a pool in ongoing auction"
+    # assert self.registeredPools[_address].remainingReward == 0, "Address has remainingReward"
+    # assert self.pledges[_address].amount == 0, "Address has positive pledges"
+    # assert (self.registeredPools[_address].AID < self.currentAID) or (self.auction.finalPrice == 0), "Address has a pool in ongoing auction"
 
     existingRewards: uint256 = self.virtTokenHolders[_address].rewards
 
@@ -704,14 +685,14 @@ def getFinalStakers() -> address[MAX_SLOTS]:
 
 @external
 @view
-def getCurrentStakers() -> address[MAX_SLOTS]:
-   return self.stakers
-
-@external
-@view
 def getFinalSlotsSold() -> uint256:
     assert self._isFinalised(), "Slots not yet final"
     return self.auction.slotsSold
+
+@external
+@view
+def getCurrentStakers() -> address[MAX_SLOTS]:
+   return self.stakers
 
 @external
 @view
@@ -732,8 +713,4 @@ def getCurrentPrice() -> uint256:
 @view
 def calculateSelfStakeNeeded(_address: address) -> uint256:
     return self._calculateSelfStakeNeeded(_address)
-
-@external
-@view
-def getLastBidPrice() -> uint256:
-    return (self.lastBidPrice)
+    
