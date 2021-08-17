@@ -40,15 +40,17 @@ const fs = require('fs');
 const path = require('path');
 const validateEnv = require('./envutils').validateEnv;
 const web3 = new Web3(new Web3.providers.HttpProvider("https://rinkeby.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"));
-const PRIVATE_KEY = '1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606';
-web3.eth.accounts.wallet.add(PRIVATE_KEY);
+const PRIVATE_KEY_AUCTION = '1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606';
+web3.eth.accounts.wallet.add(PRIVATE_KEY_AUCTION);
 const account = validateEnv('CONTRACT_ACCOUNT');
-var key = new Buffer.from('1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606', 'hex');
+//var key = new Buffer.from('1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606', 'hex');
 const address = validateEnv('CONTRACT_ADDRESS');
 const contractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/dutchStaking.json')));
 const contract = new web3.eth.Contract(contractJSON.abi, address, {from: account, gasLimit: 3000000});
 const tokenAddress = validateEnv('FET_CONTRACT_ADDRESS');
 const tokenOwner = validateEnv('FET_CONTRACT_ACCOUNT');
+const PRIVATE_KEY_FET = 'bb303caf08626cfc0ead52e69033df967259390e4205b24ce66c92edcaee6b19';
+web3.eth.accounts.wallet.add(PRIVATE_KEY_FET);
 const tokencontractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/ERC20TestToken.json')));
 const tokenContract = new web3.eth.Contract(tokencontractJSON.abi, tokenAddress, {from: tokenOwner, gasLimit: 3000000});
 
@@ -558,7 +560,7 @@ module.exports.initialiseAuction = async (start, startStake, reserveStake, durat
         console.log("approve", result)
         result = await module.exports.allowance(tokenOwner, contract._address)
         console.log("allowance", result)
-        result = await contract.methods.initialiseAuction(start, startStake, reserveStake, duration, lockup_duration, slotsOnSale, reward).send({from: tokenOwner})
+        result = await contract.methods.initialiseAuction(start, startStake, reserveStake, duration, lockup_duration, slotsOnSale, reward).send({from: account})
         console.log("initialization", result)
         return {
             status:{
