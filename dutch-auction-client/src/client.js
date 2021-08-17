@@ -80,6 +80,15 @@ module.exports.withdrawSelfStake = async (req, res) => {
 	}
 }
 
+module.exports.withdrawPledgedStake = async (req, res) => {
+	try {
+		return await utils.withdrawPledgedStake()
+
+	} catch(err) {
+		console.log(err)
+	}
+}
+
 module.exports.deleteContract = async (req, res) => {
 	try {
 		return await utils.deleteContract()

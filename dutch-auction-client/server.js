@@ -146,6 +146,20 @@ router.route('/withdrawSelfStake').post(function (req, res) {
 	}
 });
 
+router.route('/withdrawPledgedStake').post(function (req, res) {
+	try {
+		client.withdrawPledgedStake(req, res).then(result => { 
+			return res.status(200).json(result)
+		})
+
+	} catch(err) {
+		console.log(err)
+		return res.status(500).json({
+			status: "error"
+		})
+	}
+});
+
 router.route('/deleteContract').post(function (req, res) {
 	try {
 		client.deleteContract(req, res).then(result => { 

@@ -35,15 +35,15 @@
 // const tokenContract = new web3.eth.Contract(tokencontractJSON.abi, tokenAddress, {from: tokenOwner, gasLimit: 3000000});
 
 const Web3 = require('web3');
-const Tx = require('ethereumjs-tx')
+const Tx = require('ethereumjs-tx');
 const fs = require('fs');
 const path = require('path');
 const validateEnv = require('./envutils').validateEnv;
 const web3 = new Web3(new Web3.providers.HttpProvider("https://rinkeby.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"));
-const PRIVATE_KEY = '1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606'
-web3.eth.accounts.wallet.add(PRIVATE_KEY)
+const PRIVATE_KEY = '1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606';
+web3.eth.accounts.wallet.add(PRIVATE_KEY);
 const account = validateEnv('CONTRACT_ACCOUNT');
-var key = new Buffer.from('1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606', 'hex')
+var key = new Buffer.from('1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606', 'hex');
 const address = validateEnv('CONTRACT_ADDRESS');
 const contractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/dutchStaking.json')));
 const contract = new web3.eth.Contract(contractJSON.abi, address, {from: account, gasLimit: 3000000});
@@ -101,7 +101,7 @@ module.exports.getERC20Address = async () => {
 
 module.exports.retrieveUndistributedAuctionRewards = async () => {
     try {
-        let  result = await contract.methods.retrieveUndistributedAuctionRewards().call()
+        let  result = await contract.methods.retrieveUndistributedAuctionRewards().send()
         console.log(result)
         return {
             status:{
@@ -176,7 +176,7 @@ module.exports.finaliseAuction = async (finalPrice) => {
 
 module.exports.endLockup = async () => {
     try {
-        let  result = await contract.methods.endLockup().call()
+        let  result = await contract.methods.endLockup().send()
         console.log(result)
         return {
             status:{
@@ -243,9 +243,32 @@ module.exports.withdrawSelfStake = async () => {
     }
 }
 
+module.exports.withdrawPledgedStake = async () => {
+    try {
+        let  result = await contract.methods.withdrawPledgedStake().send()
+        console.log(result)
+        return {
+            status:{
+                success: true,
+                message: "Successful",
+            },
+            data: result
+        }
+    } catch (error) {
+        console.log(error)
+        return {
+            status:{
+                success: false,
+                message: "Failed"
+            },
+            data:{},
+        }
+    }
+}
+
 module.exports.deleteContract = async () => {
     try {
-        let  result = await contract.methods.deleteContract().call()
+        let  result = await contract.methods.deleteContract().send()
         console.log(result)
         return {
             status:{
