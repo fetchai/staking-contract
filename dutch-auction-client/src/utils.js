@@ -49,8 +49,8 @@ const contractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract
 const contract = new web3.eth.Contract(contractJSON.abi, address, {from: account, gasLimit: 3000000});
 const tokenAddress = validateEnv('FET_CONTRACT_ADDRESS');
 const tokenOwner = validateEnv('FET_CONTRACT_ACCOUNT');
-const PRIVATE_KEY_FET = 'bb303caf08626cfc0ead52e69033df967259390e4205b24ce66c92edcaee6b19';
-web3.eth.accounts.wallet.add(PRIVATE_KEY_FET);
+//const PRIVATE_KEY_FET = 'bb303caf08626cfc0ead52e69033df967259390e4205b24ce66c92edcaee6b19';
+//web3.eth.accounts.wallet.add(PRIVATE_KEY_FET);
 const tokencontractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/ERC20TestToken.json')));
 const tokenContract = new web3.eth.Contract(tokencontractJSON.abi, tokenAddress, {from: tokenOwner, gasLimit: 3000000});
 
@@ -550,16 +550,16 @@ module.exports.initialiseAuction = async (start, startStake, reserveStake, durat
         // start = await web3.eth.getBlockNumber() + 1
         // startStake = startStake 
         // reserveStake =  reserveStake
-        let result = await module.exports.balanceOf(tokenOwner)
-        console.log("balanceOf", result)
-        result = await module.exports.allowance(tokenOwner, contract._address)
-        console.log("allowance", result)
-        // // result = await module.exports.approve(tokenOwner, contract.address, (new BN(reward).mul(multiplier)))
-        result = await module.exports.approve(tokenOwner, contract._address, reward)
+        // let result = await module.exports.balanceOf(tokenOwner)
+        // console.log("balanceOf", result)
+        // result = await module.exports.allowance(tokenOwner, contract._address)
+        // console.log("allowance", result)
+        // // // result = await module.exports.approve(tokenOwner, contract.address, (new BN(reward).mul(multiplier)))
+        // result = await module.exports.approve(tokenOwner, contract._address, reward)
 
-        console.log("approve", result)
-        result = await module.exports.allowance(tokenOwner, contract._address)
-        console.log("allowance", result)
+        // console.log("approve", result)
+        // result = await module.exports.allowance(tokenOwner, contract._address)
+        // console.log("allowance", result)
         result = await contract.methods.initialiseAuction(start, startStake, reserveStake, duration, lockup_duration, slotsOnSale, reward).send({from: account})
         console.log("initialization", result)
         return {
