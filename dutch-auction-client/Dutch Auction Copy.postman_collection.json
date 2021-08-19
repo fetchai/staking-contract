@@ -667,6 +667,55 @@
 				"url": null
 			},
 			"response": []
+		},
+		{
+			"name": "selfStakerDeposits",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"staker\": \"0xcc1Fd2c2e9b14419e8debB27b462e5990AE3a86b\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:9050/dutchAuctionClient/selfStakerDeposits",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9050",
+					"path": [
+						"dutchAuctionClient",
+						"selfStakerDeposits"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "allStakerDeposits",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:9050/dutchAuctionClient/allStakerDeposits",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "9050",
+					"path": [
+						"dutchAuctionClient",
+						"allStakerDeposits"
+					]
+				}
+			},
+			"response": []
 		}
 	]
 }

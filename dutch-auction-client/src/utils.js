@@ -764,3 +764,28 @@ module.exports.getLastBidPrice = async () => {
         }
     }
 }
+
+
+// get total that staker has staked in the contract
+module.exports.selfStakerDeposits = async (staker) => {
+    try {
+        let result = await contract.methods.selfStakerDeposits(staker).call()
+        console.log(result)
+        return {
+            status:{
+                success: true,
+                message: "Successful",
+            },
+            data: result
+        }
+    } catch (error) {
+        console.log(error)
+        return {
+            status:{
+                success: false,
+                message: "Failed to fetch addresses"
+            },
+            data:{},
+        }
+    }
+}
