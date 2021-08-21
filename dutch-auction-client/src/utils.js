@@ -12,7 +12,7 @@ const contractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract
 const contract = new web3.eth.Contract(contractJSON.abi, address, {from: account, gasLimit: 3000000});
 const tokenAddress = validateEnv('FET_CONTRACT_ADDRESS');
 const tokenOwner = validateEnv('FET_CONTRACT_ACCOUNT');
-const tokencontractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/ERC20TestToken.json')));
+const tokencontractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/FetchToken.json')));
 const tokenContract = new web3.eth.Contract(tokencontractJSON.abi, tokenAddress, {from: tokenOwner, gasLimit: 3000000});
 
 module.exports.getFinalStakers = async () => {
