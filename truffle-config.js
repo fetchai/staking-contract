@@ -21,6 +21,15 @@
  const HDWalletProvider = require('@truffle/hdwallet-provider');
  const fs = require('fs');
 
+function getEnv(name) {
+  const value = process.env[name];
+  if (typeof value === 'undefined') {
+    throw new Error(`Unable to lookup environment variable: ${name}`)
+  }
+
+  return value;
+}
+
 module.exports = {
 
   networks: {
@@ -30,7 +39,7 @@ module.exports = {
      network_id: "*",       // Any network (default: none)
     },
     ropsten: {
-      provider: () => new HDWalletProvider("<account private key>", "https://ropsten.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
+      provider: () => new HDWalletProvider(getEnv("DEPLOYER_PRIVATE_KEY"), "https://ropsten.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
       network_id: 3,       // Ropsten's id
       gas: 5500000,        // Ropsten has a lower block limit than mainnet
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
@@ -38,7 +47,7 @@ module.exports = {
       skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     },
     rinkeby: {
-      provider: () => new HDWalletProvider("<account private key>", "https://rinkeby.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
+      provider: () => new HDWalletProvider(getEnv("DEPLOYER_PRIVATE_KEY"), "https://rinkeby.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
       network_id: 4,       // Rinkeby's id
       gas: 5500000,        // Rinkeby has a lower block limit than mainnet
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
@@ -46,7 +55,7 @@ module.exports = {
       skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     },
     mainnet: {
-      provider: () => new HDWalletProvider("account private key", "https://mainnet.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
+      provider: () => new HDWalletProvider(getEnv("DEPLOYER_PRIVATE_KEY"), "https://mainnet.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
       network_id: 1,       // Rinkeby's id
       gas: 5500000,        // Rinkeby has a lower block limit than mainnet
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
