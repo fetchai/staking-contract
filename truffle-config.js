@@ -54,6 +54,14 @@ module.exports = {
       timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
       skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     },
+    kovan: {
+      provider: () => new HDWalletProvider(getEnv("DEPLOYER_PRIVATE_KEY"), "https://kovan.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
+      network_id: 42,      // Rinkeby's id
+      gas: 5500000,        // Rinkeby has a lower block limit than mainnet
+      confirmations: 2,    // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
+    },
     mainnet: {
       provider: () => new HDWalletProvider(getEnv("DEPLOYER_PRIVATE_KEY"), "https://mainnet.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
       network_id: 1,       // Rinkeby's id
