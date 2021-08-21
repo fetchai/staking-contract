@@ -1,56 +1,17 @@
-// const Web3 = require('web3');
-// //const HDWalletProvider = require('@truffle/hdwallet-provider');
-// //provider = new HDWalletProvider("adult theme mistake auction apple outer math twenty across fiction upper boat", "https://ropsten.infura.io/v3/2408dd1a4d574ce889b35dd0a431e4ea");
-// const walletAPIUrl = "https://ropsten.infura.io/v3/2408dd1a4d574ce889b35dd0a431e4ea";
-// //provider = new HDWalletProvider("adult theme mistake auction apple outer math twenty across fiction upper boat", "https://ropsten.infura.io/v3/2408dd1a4d574ce889b35dd0a431e4ea", "https://ropsten.infura.io/"),
-// const fs = require('fs');
-// const path = require('path');
-// const validateEnv = require('./envutils').validateEnv;
-// const web3 = new Web3(new Web3.providers.HttpProvider(walletAPIUrl));
-// //var provider = new Web3HDWalletProvider("adult theme mistake auction apple outer math twenty across fiction upper boat", web3);
-// const account = validateEnv('CONTRACT_ACCOUNT');
-// const address = validateEnv('CONTRACT_ADDRESS');
-// const contractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/dutchStaking.json')));
-// const contract = new provider.eth.Contract(contractJSON.abi, address, {from: account, gasLimit: 3000000});
-
-// const Web3 = require('web3');
-// const fs = require('fs');
-// const path = require('path');
-// const {BN} = require ("bn.js");
-// const multiplier = new BN('1000000000000000000');
-// const validateEnv = require('./envutils').validateEnv;
-// const url = require('./json-rpc-provider').url;
-// const web3 = new Web3(new Web3.providers.HttpProvider(url));
-// const auctionOwner = validateEnv('CONTRACT_ACCOUNT');
-// const auctionAddress = validateEnv('CONTRACT_ADDRESS');
-// const contractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/dutchStaking.json')));
-// const contract = new web3.eth.Contract(contractJSON.abi, auctionAddress, {from: auctionOwner, gasLimit: 3000000});
-// // const address2 = validateEnv('SIMPLE_POOL_CONTRACT_ADDRESS');
-// // const contractJSON2 = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/simpleStakePool.json')));
-// // const poolContract = new web3.eth.Contract(contractJSON2.abi, address2, {from: account, gasLimit: 3000000});
-
-// const tokenAddress = validateEnv('FET_CONTRACT_ADDRESS');
-// const tokenOwner = validateEnv('FET_CONTRACT_ACCOUNT');
-// const tokencontractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/ERC20TestToken.json')));
-// const tokenContract = new web3.eth.Contract(tokencontractJSON.abi, tokenAddress, {from: tokenOwner, gasLimit: 3000000});
-
 const Web3 = require('web3');
 const Tx = require('ethereumjs-tx');
 const fs = require('fs');
 const path = require('path');
 const validateEnv = require('./envutils').validateEnv;
 const web3 = new Web3(new Web3.providers.HttpProvider("https://rinkeby.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"));
-const PRIVATE_KEY_AUCTION = '1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606';
+const PRIVATE_KEY_AUCTION = 'bb303caf08626cfc0ead52e69033df967259390e4205b24ce66c92edcaee6b19';
 web3.eth.accounts.wallet.add(PRIVATE_KEY_AUCTION);
 const account = validateEnv('CONTRACT_ACCOUNT');
-//var key = new Buffer.from('1ff499f2011d6a37e0420deffe3dc56a724e529bb96e77fdc2d82a30a9a8f606', 'hex');
 const address = validateEnv('CONTRACT_ADDRESS');
 const contractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/dutchStaking.json')));
 const contract = new web3.eth.Contract(contractJSON.abi, address, {from: account, gasLimit: 3000000});
 const tokenAddress = validateEnv('FET_CONTRACT_ADDRESS');
 const tokenOwner = validateEnv('FET_CONTRACT_ACCOUNT');
-//const PRIVATE_KEY_FET = 'bb303caf08626cfc0ead52e69033df967259390e4205b24ce66c92edcaee6b19';
-//web3.eth.accounts.wallet.add(PRIVATE_KEY_FET);
 const tokencontractJSON = JSON.parse(fs.readFileSync(path.join(__dirname, './contract-abi/ERC20TestToken.json')));
 const tokenContract = new web3.eth.Contract(tokencontractJSON.abi, tokenAddress, {from: tokenOwner, gasLimit: 3000000});
 

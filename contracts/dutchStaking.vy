@@ -45,16 +45,6 @@ struct Auction:
     rewardPerSlot: uint256
     uniqueStakers: uint256
 
-# struct Pledge:
-#     amount: uint256
-#     AID: uint256
-#     pool: address
-
-# struct Pool:
-#     remainingReward: uint256
-#     rewardPerTok: uint256
-#     AID: uint256
-
 struct VirtTokenHolder:
     isHolder: bool
     limit: uint256
@@ -79,21 +69,7 @@ event NewAuction:
     declinePerBlock: uint256
     slotsOnSale: uint256
     rewardPerSlot: uint256
-# event PoolRegistration: 
-#     AID: uint256
-#     _address: address
-#     maxStake: uint256
-#     rewardPerTok: uint256
-# event NewPledge: 
-#     AID: uint256
-#     _from: indexed(address)
-#     operator: address
-#     amount: uint256
-# event IncreasedPledge: 
-#     AID: uint256
-#     _from: indexed(address)
-#     operator: address
-#     topup: uint256
+    
 event AuctionFinalised: 
     AID: uint256
     finalPrice: uint256
@@ -114,21 +90,21 @@ event PledgeWithdrawal:
 token: ERC20
 owner: public(address)
 earliestDelete: public(uint256)
+
 # address -> uint256 Slots a staker has won in the current auction (cleared at endLockup())
 stakerSlots: HashMap[address, uint256]
+
 # auction winners
 stakers: address[MAX_SLOTS]
 
 # pledged stake + committed pool reward, excl. selfStakerDeposit; pool -> deposits
 poolDeposits: public(HashMap[address, uint256])
-# staker (through pool) -> Pledge{pool, amount}
-# pledges: public(HashMap[address, Pledge])
+
 # staker (directly) -> amount
 selfStakerDeposits: public(HashMap[address, uint256])
+
 # staker (directly) -> price at which the bid was made
 priceAtBid: public(HashMap[address, uint256])
-# pool address -> Pool
-# registeredPools: public(HashMap[address, Pool])
 
 # Auction details
 currentAID: public(uint256)
@@ -244,7 +220,6 @@ def initialiseAuction(_start: uint256,
     # NOTE: _isFinalised() relies on this requirement
     assert _reserveStake > 0, "Reserve stake has to be at least 1"
     assert self.auction.lockupEnd == 0, "End current auction"
-
     self.currentAID += 1
 
     # Use integer-ceil() of the fraction with (+ _duration - 1)
@@ -300,17 +275,6 @@ def bid(_topup: uint256):
     _isVirtTokenHolder: bool = self.virtTokenHolders[msg.sender].isHolder
 
     assert (_isVirtTokenHolder == False) or (_topup <= self.virtTokenHolders[msg.sender].limit), "Virtual tokens above limit"
-
-    # If pool: move unclaimed rewards and clear
-    # if self.registeredPools[msg.sender].AID == _currentAID:
-    #     unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
-    #     self.registeredPools[msg.sender] = empty(Pool)
-    #     self.poolDeposits[msg.sender] -= unclaimed
-    #     self.selfStakerDeposits[msg.sender] += unclaimed
-    # if address was a pool in a previous auction and not the current one: reset poolDeposits
-    # do not rely on self.registeredPools[msg.sender].AID as this gets cleared at certain points
-    # elif self.poolDeposits[msg.sender] > 0:
-    #     self.poolDeposits[msg.sender] = empty(uint256)
 
     totDeposit: uint256 = self.selfStakerDeposits[msg.sender]
 
@@ -453,116 +417,6 @@ def abortAuction(payoutRewards: bool):
     self._endLockup(payoutRewards)
     log AuctionAborted(self.currentAID, payoutRewards)
 
-# @param AID: auction ID, has to match self.currentAID
-# @param _totalReward: total reward committed to stakers, has to be paid upon
-#   calling this and be approved with the ERC20 token
-# @param _rewardPerTok: _rewardPerTok / REWARD_PER_TOK_DENOMINATOR will be paid
-#   for each stake pledged to the pool. Meaning _rewardPerTok should equal
-#   reward per token * REWARD_PER_TOK_DENOMINATOR (see getDenominator())
-# @external
-# def registerPool(AID: uint256,
-#                  _totalReward: uint256,
-#                  _rewardPerTok: uint256):
-#     assert AID == self.currentAID, "Not current auction"
-#     assert self._isBiddingPhase(), "Not in bidding phase"
-#     assert self.registeredPools[msg.sender].AID < AID, "Pool already exists"
-#     assert self.registeredPools[msg.sender].remainingReward == 0, "Unclaimed rewards"
-#     assert self.virtTokenHolders[msg.sender].isHolder == False, "Not allowed for virtTokenHolders"
-
-#     self.registeredPools[msg.sender] = Pool({remainingReward: _totalReward,
-#                                              rewardPerTok: _rewardPerTok,
-#                                              AID: AID})
-#     # overwrite any poolDeposits that existed for the last auction
-#     self.poolDeposits[msg.sender] = _totalReward
-
-#     success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(_totalReward))
-#     assert success, "Transfer failed"
-
-#     maxStake: uint256 = (_totalReward * REWARD_PER_TOK_DENOMINATOR) / _rewardPerTok
-#     log PoolRegistration(AID, msg.sender, maxStake, _rewardPerTok)
-
-# @notice Move pool rewards that were not claimed by anyone into
-#   selfStakerDeposits. Automatically done if pool enters a bid.
-# @dev Requires that the auction has passed the bidding phase
-# @external
-# def retrieveUnclaimedPoolRewards():
-#     assert ((self._isBiddingPhase() == False)
-#              or (self.registeredPools[msg.sender].AID < self.currentAID)), "Bidding phase of AID not over"
-
-#     unclaimed: uint256 = self.registeredPools[msg.sender].remainingReward
-#     self.registeredPools[msg.sender] = empty(Pool)
-
-#     self.poolDeposits[msg.sender] -= unclaimed
-#     self.selfStakerDeposits[msg.sender] += unclaimed
-
-# @internal
-# def _updatePoolRewards(pool: address, newAmount: uint256) -> uint256:
-#     newReward: uint256 = ((self.registeredPools[pool].rewardPerTok * newAmount)
-#                                 / REWARD_PER_TOK_DENOMINATOR)
-#     assert self.registeredPools[pool].remainingReward >= newReward, "Rewards depleted"
-#     self.registeredPools[pool].remainingReward -= newReward
-#     return newReward
-
-# @notice Pledge stake to a staking pool. Possible from auction intialisation
-#   until the end of the bidding phase or until the pool has made a bid.
-#   Stake from the last auction can be taken over to the next auction. If amount
-#   exceeds the previous stake, this contract must be approved with the ERC20 token
-#   to transfer the difference to this contract.
-# @dev Only one pledge per address and auction allowed
-# @dev If decreasing the pledge, the difference is immediately paid out
-# @dev If the pool operator has already bid, this will throw with "Rewards depleted"
-# @param AID: The auction ID
-# @param pool: The address of the pool
-# @param amount: The new total amount, not the difference to existing pledges. If increasing the
-#   pledge, this has to include the pool rewards of the initial pledge
-# @external
-# def pledgeStake(AID: uint256, pool: address, amount: uint256):
-#     assert AID == self.currentAID, "Not current AID"
-#     assert self._isBiddingPhase(), "Not in bidding phase"
-#     assert self.registeredPools[pool].AID == AID, "Not a registered pool"
-#     assert self.virtTokenHolders[msg.sender].isHolder == False, "Not allowed for virtTokenHolders"
-
-#     existingPledgeAmount: uint256 = self.pledges[msg.sender].amount
-#     assert self.pledges[msg.sender].AID < AID, "Already pledged"
-
-#     newReward: uint256 = self._updatePoolRewards(pool, amount)
-
-#     # overwriting any existing amount
-#     self.pledges[msg.sender] = Pledge({amount: amount + newReward,
-#                                                   AID: AID,
-#                                                   pool: pool})
-#     # pool reward is already added to poolDeposits during registerPool() call
-#     self.poolDeposits[pool] += amount
-
-#     if amount > existingPledgeAmount:
-#         success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(amount - existingPledgeAmount))
-#         assert success, "Transfer failed"
-#     elif amount < existingPledgeAmount:
-#         success: bool = self.token.transfer(msg.sender, self.as_unitless_number(existingPledgeAmount - amount))
-#         assert success, "Transfer failed"
-
-#     log NewPledge(AID, msg.sender, pool, amount)
-
-# @notice Increase an existing pledge in the current auction
-# @dev Requires the auction to be in bidding phase and the pool to have enough rewards remaining
-# @param pool: The address of the pool. Has to match the pool of the initial pledge
-# @param topup: Value by which to increase the pledge
-# @external
-# def increasePledge(pool: address, topup: uint256):
-#     AID: uint256 = self.currentAID
-#     assert self._isBiddingPhase(), "Not in bidding phase"
-#     assert self.pledges[msg.sender].AID == AID, "No pledge made in this auction yet"
-#     assert self.pledges[msg.sender].pool == pool, "Cannot change pool"
-
-#     newReward: uint256 = self._updatePoolRewards(pool, topup)
-#     self.pledges[msg.sender].amount += topup + newReward
-#     self.poolDeposits[pool] += topup
-
-#     success: bool = self.token.transferFrom(msg.sender, self, self.as_unitless_number(topup))
-#     assert success, "Transfer failed"
-
-#     log IncreasedPledge(AID, msg.sender, pool, topup)
-
 # @notice Withdraw any self-stake exceeding the required lockup. In case sender is a bidder in the
 #   current auction, this requires the auction to be finalised through finaliseAuction(),
 #   o/w _calculateSelfStakeNeeded() will throw
@@ -590,22 +444,6 @@ def withdrawSelfStake() -> uint256:
     log SelfStakeWithdrawal(msg.sender, withdrawal)
 
     return withdrawal
-
-# @notice Withdraw pledged stake after the lock-up has ended
-# @external
-# def withdrawPledgedStake() -> uint256:
-#     withdrawal: uint256 = 0
-#     if ((self.pledges[msg.sender].AID < self.currentAID)
-#         or (self.auction.lockupEnd == 0)):
-#         withdrawal += self.pledges[msg.sender].amount
-#         self.pledges[msg.sender] = empty(Pledge)
-
-#     success: bool = self.token.transfer(msg.sender, self.as_unitless_number(withdrawal))
-#     assert success, "Transfer failed"
-
-#     log PledgeWithdrawal(msg.sender, withdrawal)
-
-#     return withdrawal
 
 # @notice Allow the owner to remove the contract, given that no auction is
 #   active and at least DELETE_PERIOD blocks have past since the last lock-up end.

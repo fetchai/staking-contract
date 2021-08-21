@@ -30,7 +30,7 @@ module.exports = {
      network_id: "*",       // Any network (default: none)
     },
     ropsten: {
-      provider: () => new HDWalletProvider("adult theme mistake auction apple outer math twenty across fiction upper boat", "https://ropsten.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
+      provider: () => new HDWalletProvider("<account private key>", "https://ropsten.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
       network_id: 3,       // Ropsten's id
       gas: 5500000,        // Ropsten has a lower block limit than mainnet
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
@@ -38,8 +38,16 @@ module.exports = {
       skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
     },
     rinkeby: {
-      provider: () => new HDWalletProvider("adult theme mistake auction apple outer math twenty across fiction upper boat", "https://rinkeby.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
+      provider: () => new HDWalletProvider("<account private key>", "https://rinkeby.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
       network_id: 4,       // Rinkeby's id
+      gas: 5500000,        // Rinkeby has a lower block limit than mainnet
+      confirmations: 2,    // # of confs to wait between deployments. (default: 0)
+      timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
+      skipDryRun: true     // Skip dry run before migrations? (default: false for public nets )
+    },
+    mainnet: {
+      provider: () => new HDWalletProvider("account private key", "https://mainnet.infura.io/v3/9ba3a5911d8b49c8ad87920e5043eae3"),
+      network_id: 1,       // Rinkeby's id
       gas: 5500000,        // Rinkeby has a lower block limit than mainnet
       confirmations: 2,    // # of confs to wait between deployments. (default: 0)
       timeoutBlocks: 200,  // # of blocks before a deployment times out  (minimum/default: 50)
