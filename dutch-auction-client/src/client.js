@@ -3,7 +3,7 @@ const utils = require('./utils');
 module.exports.getFinalStakers = async (req, res) => {
 	try {
 		return await utils.getFinalStakers()
-		
+
 	} catch(err) {
 		console.log(err)
 	}
@@ -491,7 +491,7 @@ module.exports.getAuction = async (req, res) => {
 module.exports.getCurrentStakers = async (req, res) => {
 	try {
 		return await utils.getCurrentStakers()
-		
+
 	} catch(err) {
 		console.log(err)
 	}
@@ -501,7 +501,7 @@ module.exports.getCurrentStakers = async (req, res) => {
 module.exports.getLastBidPrice = async (req, res) => {
 	try {
 		return await utils.getLastBidPrice()
-		
+
 	} catch(err) {
 		console.log(err)
 	}
