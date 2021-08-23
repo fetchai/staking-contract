@@ -533,7 +533,7 @@ module.exports.initialiseAuction = async (start, startStake, reserveStake, durat
         // console.log("approve", result)
         // result = await module.exports.allowance(tokenOwner, contract._address)
         // console.log("allowance", result)
-        result = await contract.methods.initialiseAuction(start, startStake, reserveStake, duration, lockup_duration, slotsOnSale, reward).send({from: account})
+        result = await contract.methods.initialiseAuction(start, startStake, reserveStake, duration, lockup_duration, slotsOnSale, reward).send()
         console.log("initialization", result)
         return {
             status:{
