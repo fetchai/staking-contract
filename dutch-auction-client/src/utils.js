@@ -99,9 +99,6 @@ module.exports.retrieveUndistributedAuctionRewards = async () => {
 
 module.exports.bid = async (bidder_address, amount) => {
     try {
-        if(bidder_address == null){
-            bidder_address = tokenOwner
-        }
         let result = await module.exports.approve(bidder_address, contract._address, amount)
         console.log(result)
         result = await contract.methods.bid(amount).send({from: bidder_address})
@@ -174,7 +171,8 @@ module.exports.endLockup = async () => {
 
 module.exports.abortAuction = async (payoutRewards) => {
     try {
-        let  result = await contract.methods.abortAuction(payoutRewards).send()
+        console.log("abortAuction", payoutRewards);
+        let  result = await contract.methods.abortAuction(payoutRewards).send({gasLimit: 600000})
         console.log(result)
         return {
             status:{
@@ -533,10 +531,14 @@ module.exports.initialiseAuction = async (start, startStake, reserveStake, durat
         // console.log("approve", result)
         // result = await module.exports.allowance(tokenOwner, contract._address)
         // console.log("allowance", result)
-        result = await contract.methods.initialiseAuction(start, startStake, reserveStake, duration, lockup_duration, slotsOnSale, reward).send({from: account})
+        assert(reward === 0, "Non-zero reward is not supported");
+
+        let result = await contract.methods.initialiseAuction(start, startStake, reserveStake, duration, lockup_duration,
+            slotsOnSale, reward).send({gasLimit: 300000})
+
         console.log("initialization", result)
         return {
-            status:{
+            status: {
                 success: true,
                 message: "Successful",
             },
@@ -545,11 +547,11 @@ module.exports.initialiseAuction = async (start, startStake, reserveStake, durat
     } catch (error) {
         console.log(error)
         return {
-            status:{
+            status: {
                 success: false,
                 message: "Failed"
             },
-            data:{},
+            data: {},
         }
     }
 }
