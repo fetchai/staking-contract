@@ -506,3 +506,32 @@ module.exports.getLastBidPrice = async (req, res) => {
 		console.log(err)
 	}
 }
+
+
+module.exports.selfStakerDeposits = async (req, res) => {
+	try {
+		var idInfo = req.body;
+		var staker = idInfo.staker;
+		return await utils.selfStakerDeposits(staker);
+	} catch(err) {
+		console.log(err)
+	}
+}
+
+// return amount staked for all the stakers
+module.exports.allStakerDeposits = async (req, res) => {
+	try {
+		let stakers = await utils.getCurrentStakers()
+		stakers = stakers.data.filter(function(e) { return e !== '0x0000000000000000000000000000000000000000' });
+
+		let deposits = [];
+		for (let i = 0;i < stakers.length;i++) {
+			let deposit = await utils.selfStakerDeposits(stakers[i]);
+			deposits.push([stakers[i], deposit.data]);
+		}
+
+		return deposits;
+	} catch(err) {
+		console.log(err)
+	}
+}
