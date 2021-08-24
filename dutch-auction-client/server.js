@@ -441,21 +441,6 @@ router.route('/getCurrentStakers').post(function (req, res) {
 	}
 })
 
-router.route('/getLastBidPrice').post(function (req, res) {
-	try {
-		client.getLastBidPrice(req, res).then(result => { 
-			return res.status(200).json(result)
-		})
-
-	} catch(err) {
-		console.log(err)
-		return res.status(500).json({
-			status: "error"
-		})
-	}
-})
-
-
 router.route('/selfStakerDeposits').post(function (req, res) {
 	try {
 		client.selfStakerDeposits(req, res).then(result => {
@@ -470,7 +455,6 @@ router.route('/selfStakerDeposits').post(function (req, res) {
 	}
 })
 
-
 router.route('/allStakerDeposits').post(function (req, res) {
 	try {
 		client.allStakerDeposits(req, res).then(result => {
@@ -484,7 +468,6 @@ router.route('/allStakerDeposits').post(function (req, res) {
 		})
 	}
 })
-
 
 app.use('/dutchAuctionClient', router);
 app.listen(port);
