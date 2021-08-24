@@ -125,7 +125,7 @@ module.exports.bid = async (bidder_address, amount) => {
 
 module.exports.finaliseAuction = async (finalPrice) => {
     try {
-        let  result = await contract.methods.finaliseAuction(finalPrice).send()
+        let  result = await contract.methods.finaliseAuction(finalPrice).send({gasLimit: 300000})
         console.log(result)
         return {
             status:{
@@ -148,7 +148,7 @@ module.exports.finaliseAuction = async (finalPrice) => {
 
 module.exports.endLockup = async () => {
     try {
-        let  result = await contract.methods.endLockup().send()
+        let  result = await contract.methods.endLockup().send({gasLimit: 600000})
         console.log(result)
         return {
             status:{
@@ -531,7 +531,10 @@ module.exports.initialiseAuction = async (start, startStake, reserveStake, durat
         // console.log("approve", result)
         // result = await module.exports.allowance(tokenOwner, contract._address)
         // console.log("allowance", result)
-        assert(reward === 0, "Non-zero reward is not supported");
+        if (parseInt(reward) !== 0) {
+            console.log("Non-zero reward is not supported");
+            return
+        }
 
         let result = await contract.methods.initialiseAuction(start, startStake, reserveStake, duration, lockup_duration,
             slotsOnSale, reward).send({gasLimit: 300000})
